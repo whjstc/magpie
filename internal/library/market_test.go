@@ -360,3 +360,34 @@ func TestMarketSkillHadByName(t *testing.T) {
 		}
 	}
 }
+
+// Installing one answer-me-with-html must not mark every other repository's
+// skill of that name as added. The library can hold only one skill of a
+// name, so the others stay addable and the install says the name is taken
+// (whjstc). A skill whose name differs is untouched, and the one that was
+// installed stays added, including when the owner is spelled in another case.
+func TestMarketSkillFromAnotherRepoIsNotAdded(t *testing.T) {
+	l := &Library{Skills: []*Skill{
+		{Name: "answer-me-with-html", Source: &Source{Kind: "github", Repo: "qingyuna/answer-me-with-html", Path: "answer-me-with-html"}},
+	}}
+	for _, c := range []struct{ source, id, name, want string }{
+		{"qingyuna/answer-me-with-html", "answer-me-with-html", "answer-me-with-html", "answer-me-with-html"},
+		{"Qingyuna/Answer-Me-With-Html", "answer-me-with-html", "answer-me-with-html", "answer-me-with-html"},
+		{"mzopedia/answer-me-with-html", "answer-me-with-html", "answer-me-with-html", ""},
+		{"opposj/answer-me-with-html", "answer-me-with-html", "answer-me-with-html", ""},
+		{"deborarss/answer-me-with-html", "answer-me-with-html", "answer-me-with-html", ""},
+		{"liyuankui/answer-me-with-html", "answer-me-with-html", "answer-me-with-html", ""},
+		{"hd838a/answer-me-with-html", "answer-me-with-html", "answer-me-with-html", ""},
+		{"alfred-zhong/agent-skills", "answer-me-with-html", "answer-me-with-html", ""},
+		// the report's cards were cut off here; the visible prefix is enough,
+		// and a different name stays not added either way
+		{"seaworld008/commonly-used-h", "answer-me-with-html", "answer-me-with-html", ""},
+		{"plasticine-yang/skills", "answer-me-with-html-ren", "answer-me-with-html-ren", ""},
+		{"oxbshw/watch-skill", "sharing-results", "sharing-results", ""},
+		{"mizchi/explainer", "explainer", "explainer", ""},
+	} {
+		if got := l.haveSkill(c.source, c.id, c.name); got != c.want {
+			t.Errorf("haveSkill(%s, %s, %s) = %q, want %q", c.source, c.id, c.name, got, c.want)
+		}
+	}
+}

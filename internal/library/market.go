@@ -949,13 +949,22 @@ func (l *Library) haveSkill(source, id, name string) string {
 			return s.Name
 		}
 	}
-	// one taken in from an agent's folder (npx skills puts them in
-	// ~/.agents/skills) has no source to match, and adding is turned away
-	// by name all the same (InstallMarketSkill): it's had by its name
+	// One taken in from an agent's folder (npx skills puts them in
+	// ~/.agents/skills) has no repository to match, and adding is turned
+	// away by name all the same (InstallMarketSkill): it's had by its
+	// name. A skill from another GitHub repository is a different skill
+	// even under the same name (answer-me-with-html from many authors):
+	// the market must not call that one added. Installing it is still
+	// turned away, and that answer says the name is already taken.
 	for _, n := range []string{id, name} {
-		if s := l.skill(n); s != nil {
-			return s.Name
+		s := l.skill(n)
+		if s == nil {
+			continue
 		}
+		if s.Source != nil && s.Source.Kind == "github" && !strings.EqualFold(s.Source.Repo, source) {
+			continue
+		}
+		return s.Name
 	}
 	return ""
 }
